@@ -1,14 +1,16 @@
 local _, FDJ = ...
 
 local ACCOUNT_DEFAULTS = {
-    schema = 1,
+    schema = 2,
     settings = {
+        appearance = "blizzard",
         discoveryMode = true,
         progressScope = "character",
         show = { entrance = true, boss = true, quest = true, shortcut = true, risky = true },
     },
     progress = {},
     annotations = {},
+    generalNotes = "",
 }
 
 local CHARACTER_DEFAULTS = { schema = 1, progress = {}, annotations = {} }
@@ -27,10 +29,38 @@ local function copyDefaults(target, defaults)
 end
 
 function FDJ:InitializeDatabase()
-    ForeverDungeonJournalDB = ForeverDungeonJournalDB or {}
-    ForeverDungeonJournalCharDB = ForeverDungeonJournalCharDB or {}
+    local existingAccount = type(ForeverDungeonJournalDB) == "table"
+    if not existingAccount then ForeverDungeonJournalDB = {} end
+    if type(ForeverDungeonJournalCharDB) ~= "table" then ForeverDungeonJournalCharDB = {} end
+    if type(ForeverDungeonJournalDB.settings) ~= "table" then ForeverDungeonJournalDB.settings = {} end
+
+    -- Schema 1 always used bronze. Preserve it for upgraded users while new
+    -- installs receive the native Blizzard appearance from ACCOUNT_DEFAULTS.
+    local oldSchema = tonumber(ForeverDungeonJournalDB.schema) or (existingAccount and 1 or 0)
+    if oldSchema < 2 then
+        if existingAccount then
+            if ForeverDungeonJournalDB.settings.appearance == nil then ForeverDungeonJournalDB.settings.appearance = "bronze" end
+        end
+        -- Seed onboarding metadata only during this migration. It is not a
+        -- recurring default, so later user changes are never replaced.
+        if ForeverDungeonJournalDB.settings.onboardingVersion == nil then
+            ForeverDungeonJournalDB.settings.onboardingVersion = 1
+        end
+        ForeverDungeonJournalDB.schema = 2
+    end
+
+    -- Repair malformed saved variables before recursively filling nil values.
+    -- Empty strings and all other user values remain untouched.
+    if type(ForeverDungeonJournalDB.settings.show) ~= "table" then ForeverDungeonJournalDB.settings.show = {} end
+    if type(ForeverDungeonJournalDB.progress) ~= "table" then ForeverDungeonJournalDB.progress = {} end
+    if type(ForeverDungeonJournalDB.annotations) ~= "table" then ForeverDungeonJournalDB.annotations = {} end
+    if type(ForeverDungeonJournalCharDB.progress) ~= "table" then ForeverDungeonJournalCharDB.progress = {} end
+    if type(ForeverDungeonJournalCharDB.annotations) ~= "table" then ForeverDungeonJournalCharDB.annotations = {} end
     copyDefaults(ForeverDungeonJournalDB, ACCOUNT_DEFAULTS)
     copyDefaults(ForeverDungeonJournalCharDB, CHARACTER_DEFAULTS)
+    if ForeverDungeonJournalDB.settings.appearance ~= "blizzard" and ForeverDungeonJournalDB.settings.appearance ~= "bronze" then
+        ForeverDungeonJournalDB.settings.appearance = "blizzard"
+    end
     self.db = ForeverDungeonJournalDB
     self.charDB = ForeverDungeonJournalCharDB
 end

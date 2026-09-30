@@ -25,6 +25,7 @@ for (const forbidden of [
 }
 for (const required of [
   'SavedVariables:', 'SavedVariablesPerCharacter:', 'RegisterDataPack', 'discoveryMode',
+  'appearance', 'Interface\\\\DialogFrame\\\\UI-DialogBox-Border',
   'IconTexture: Interface\\AddOns\\ForeverDungeonJournal\\Media\\Icon',
 ]) {
   if (!(toc + combined).includes(required)) errors.push(`missing: ${required}`);

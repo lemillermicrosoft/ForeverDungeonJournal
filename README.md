@@ -5,12 +5,14 @@ An installable alpha framework for a spoiler-light dungeon atlas and personal di
 ## MVP behavior
 
 - `/fdj` opens a searchable dungeon browser with marker filters.
+- Fresh installs use a Blizzard-native frame and control appearance; the original bronze presentation remains available and applies immediately without a reload.
+- With no verified packs installed, onboarding explains the safe discovery workflow and provides persistent general expedition notes without inventing game facts.
 - Discovery mode hides unrevealed markers by default. Markers can be manually revealed.
 - Manual reveals record their first-revealed time. `BOSS_KILL` and `QUEST_TURNED_IN` record first kill/completion only when the event ID is an explicitly non-secret number and a verified pack supplies the matching ID.
 - Target GUIDs and encounter-loot payloads are deliberately not inspected, so automatic first-seen and first-loot tracking are not claimed in this alpha. The addon does not read the combat log.
 - Right-click a visible marker to add a personal annotation.
 - Progress and annotations can be per-character or account-wide.
-- Esc > Options > Forever Dungeon Journal—or the always-available Options button—controls discovery, scope, and marker types, including when no packs are installed.
+- Esc > Options > Forever Dungeon Journal—or the always-available Options button—controls appearance, discovery, scope, and marker types, including when no packs are installed.
 - SavedVariables: `ForeverDungeonJournalDB` and `ForeverDungeonJournalCharDB`.
 
 ## Install
