@@ -1,33 +1,45 @@
 # Forever Dungeon Journal
 
-An installable alpha framework for a spoiler-light dungeon atlas and personal discovery journal for WoW Forever (`Interface: 16001`). **No dungeon facts are bundled yet**: names, maps, coordinates, bosses, quests, shortcuts, risky pulls, and loot data must come from reviewed data packs.
+A spoiler-light dungeon browser and personal discovery journal for WoW Forever (`Interface: 16001`). Candidate build: **0.2.0-alpha.1**.
 
-## MVP behavior
+## What works
 
-- `/fdj` opens a searchable dungeon browser with marker filters.
-- Fresh installs use a Blizzard-native frame and control appearance; the original bronze presentation remains available and applies immediately without a reload.
-- With no verified packs installed, onboarding explains the safe discovery workflow and provides persistent general expedition notes without inventing game facts.
-- Discovery mode hides unrevealed markers by default. Markers can be manually revealed.
-- Manual reveals record their first-revealed time. `BOSS_KILL` and `QUEST_TURNED_IN` record first kill/completion only when the event ID is an explicitly non-secret number and a verified pack supplies the matching ID.
-- Target GUIDs and encounter-loot payloads are deliberately not inspected, so automatic first-seen and first-loot tracking are not claimed in this alpha. The addon does not read the combat log.
-- Right-click a visible marker to add a personal annotation.
-- Progress and annotations can be per-character or account-wide.
-- Esc > Options > Forever Dungeon Journal—or the always-available Options button—controls appearance, discovery, scope, and marker types, including when no packs are installed.
-- SavedVariables: `ForeverDungeonJournalDB` and `ForeverDungeonJournalCharDB`.
+- `/fdj` opens a searchable, filterable dungeon browser.
+- At load, the addon asks the installed Forever client's Encounter Journal for dungeon names, instance/map references, boss names, encounter IDs, descriptions, and journal artwork. These runtime facts are labeled **client** and are not redistributed as a copied database.
+- Authored API v2 data packs can add verified entrances, quests, coordinates, shortcuts, and risky-pull notes with mandatory source/build/license/verification metadata.
+- Encounter artwork is rendered when the client reports it. Authored normalized coordinates render colored pins. **Open world map** gracefully opens a verified map ID or explains why it cannot.
+- Discovery mode hides labels until manual reveal. Right-click revealed entries for notes.
+- `BOSS_KILL` and `QUEST_TURNED_IN` record first completion only for an explicitly numeric, registered ID. No combat log, target, name/realm, loot payload, secret comparison, or protected action is used.
+- Progress and annotations can be per-character or account-wide. General expedition notes are account-wide.
+- Blizzard/native is the default: warm bronze outer frame, dark-umber header/body, subtle inner dividers. Bronze/custom remains optional.
+- `/fdj diagnostics` reports provider, data-pack, rejection, and optional-addon status.
 
-## Install
+## Honest coverage boundary
 
-Copy the `ForeverDungeonJournal` folder into the WoW Forever `Interface/AddOns` directory. The folder must contain `ForeverDungeonJournal.toc` directly.
+The client-derived provider is the most complete lawful source currently available to this project. It can expose only fields returned by the installed beta build. Entrance coordinates, dungeon quests, shortcuts, and risky-pull annotations remain explicitly unconfirmed unless an independently verified API v2 pack supplies them. The addon does not infer these facts and does not copy Atlas, AtlasLoot, Questie, HandyNotes, or fan-site databases/assets.
 
-## Data packs
+## Install and smoke test
 
-Data packs are separate addons loaded after this addon. See [`docs/DATA_PACKS.md`](docs/DATA_PACKS.md). The repository includes a deliberately fictional development fixture under `dev/`; it is absent from the TOC and production zip.
+Copy the `ForeverDungeonJournal` folder into `_classic_beta_/Interface/AddOns/`. The folder must directly contain `ForeverDungeonJournal.toc`.
 
-## Compatibility preflight
+1. Log into build 1.60.x, run `/fdj`, and confirm the window opens without Lua errors.
+2. Confirm native styling, search, dungeon selection, marker filters, paging, and tooltips.
+3. With Discovery mode on, click an unknown row; reload and confirm it stays revealed.
+4. Right-click a revealed row, save a note, reload, and verify it persists.
+5. Change character/account scope and verify each store remains independent.
+6. Select Bronze and back to Blizzard/native without reloading.
+7. Click **Open world map**; verify a reported map opens or a bounded message appears.
+8. Run `/fdj diagnostics`; record dungeon/marker counts and optional integration states.
+9. Verify boss/quest progress only through ordinary play; do not synthesize protected or secret values.
 
-See [`docs/OSS_PREFLIGHT.md`](docs/OSS_PREFLIGHT.md). This project does not copy databases or assets from Atlas/AtlasLoot, HandyNotes, or Questie. Optional dependency declarations permit load ordering, while future adapters should use documented public APIs and honor upstream licenses.
+## Development
 
-## Package
+```powershell
+npm ci
+npm test
+npm run package
+```
 
-Run `npm run package`. It validates Lua 5.1 syntax, builds a clean allowlisted staging tree, validates archive integrity, and writes `dist/ForeverDungeonJournal-0.1.0-alpha.zip`. Development files and `node_modules` are excluded.
+Packaging writes `dist/ForeverDungeonJournal-0.2.0-alpha.1.zip` and verifies the exact allowlist. See [data-pack authoring](docs/DATA_AUTHOR_GUIDE.md), [API contract](docs/DATA_PACKS.md), and [OSS/provenance preflight](docs/OSS_PREFLIGHT.md).
 
+No release has been published for this candidate; player smoke testing is required first.

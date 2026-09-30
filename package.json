@@ -1,12 +1,14 @@
 {
   "name": "forever-dungeon-journal",
-  "version": "0.1.0-alpha.0",
+  "version": "0.2.0-alpha.1",
   "private": true,
   "scripts": {
     "validate": "node tools/validate.js",
+    "test": "node tools/validate.js && node tools/test.js",
     "package": "powershell -ExecutionPolicy Bypass -File tools/package.ps1"
   },
   "devDependencies": {
+    "fengari": "^0.1.5",
     "luaparse": "^0.3.1"
   }
 }

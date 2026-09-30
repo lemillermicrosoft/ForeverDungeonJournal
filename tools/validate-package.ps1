@@ -1,9 +1,11 @@
 param([Parameter(Mandatory = $true)][string]$Zip)
 $ErrorActionPreference = "Stop"
 $Expected = @(
+    "CHANGELOG.md",
     "Core.lua",
     "Database.lua",
     "DataRegistry.lua",
+    "NativeData.lua",
     "ForeverDungeonJournal.toc",
     "LICENSE",
     "Media/Icon.tga",
@@ -11,6 +13,7 @@ $Expected = @(
     "README.md",
     "UI.lua",
     "docs/DATA_PACKS.md",
+    "docs/DATA_AUTHOR_GUIDE.md",
     "docs/OSS_PREFLIGHT.md"
 ) | Sort-Object
 $Temp = Join-Path ([IO.Path]::GetTempPath()) ("fdj-package-" + [guid]::NewGuid().ToString("N"))

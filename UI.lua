@@ -1,6 +1,7 @@
 local _, FDJ = ...
 
 local TYPE_LABELS = { entrance = "Entrance", boss = "Boss", quest = "Quest", shortcut = "Shortcut", risky = "Risky pull" }
+local TYPE_COLORS = { entrance = {0.25, 0.85, 1}, boss = {1, 0.3, 0.2}, quest = {1, 0.82, 0.2}, shortcut = {0.35, 1, 0.45}, risky = {1, 0.45, 0.05} }
 local BRONZE = { 0.78, 0.57, 0.25 }
 local BLIZZARD_BACKDROP = {
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -130,17 +131,22 @@ function FDJ:InitializeUI()
 
     local search = CreateFrame("EditBox", nil, f, "SearchBoxTemplate")
     search:SetSize(230, 26); search:SetPoint("TOPLEFT", 16, -46); search:SetAutoFocus(false)
-    search:SetScript("OnTextChanged", function() FDJ:RefreshUI() end); f.search = search
+    search:SetScript("OnTextChanged", function() FDJ.dungeonPage = 1; FDJ:RefreshUI() end); f.search = search
 
     local list = CreateFrame("Frame", nil, f, "BackdropTemplate")
     list:SetPoint("TOPLEFT", 14, -78); list:SetPoint("BOTTOMLEFT", 14, 14); list:SetWidth(240); table.insert(self.appearanceFrames, list)
     f.dungeonButtons = {}
-    for i = 1, 18 do
+    for i = 1, 16 do
         local b = button(list, "", 216); b:SetPoint("TOPLEFT", 10, -10 - ((i - 1) * 25))
         local fontString = b:GetFontString()
         if fontString and fontString.SetJustifyH then fontString:SetJustifyH("LEFT") end
         f.dungeonButtons[i] = b
     end
+    local dungeonPrevious = button(list, "<", 34); dungeonPrevious:SetPoint("BOTTOMLEFT", 10, 10)
+    dungeonPrevious:SetScript("OnClick", function() FDJ.dungeonPage = math.max(1, (FDJ.dungeonPage or 1) - 1); FDJ.selected = nil; FDJ:RefreshUI() end); f.dungeonPrevious = dungeonPrevious
+    local dungeonPage = list:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); dungeonPage:SetPoint("LEFT", dungeonPrevious, "RIGHT", 10, 0); dungeonPage:SetWidth(118); dungeonPage:SetJustifyH("CENTER"); f.dungeonPageLabel = dungeonPage
+    local dungeonNext = button(list, ">", 34); dungeonNext:SetPoint("BOTTOMRIGHT", -10, 10)
+    dungeonNext:SetScript("OnClick", function() FDJ.dungeonPage = (FDJ.dungeonPage or 1) + 1; FDJ.selected = nil; FDJ:RefreshUI() end); f.dungeonNext = dungeonNext
 
     local detail = CreateFrame("Frame", nil, f, "BackdropTemplate")
     detail:SetPoint("TOPLEFT", 264, -46); detail:SetPoint("BOTTOMRIGHT", -14, 14); table.insert(self.appearanceFrames, detail)
@@ -150,13 +156,29 @@ function FDJ:InitializeUI()
     source:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -4); source:SetPoint("RIGHT", -14, 0); source:SetJustifyH("LEFT"); f.source = source
     local map = detail:CreateTexture(nil, "ARTWORK")
     map:SetPoint("TOPLEFT", 12, -68); map:SetSize(510, 180); map:SetColorTexture(0.025, 0.02, 0.015, 1); f.map = map
+    f.mapPins = {}
+    for i = 1, 24 do
+        local pin = CreateFrame("Button", nil, detail)
+        pin:SetSize(14, 14); pin:SetFrameLevel(detail:GetFrameLevel() + 5)
+        local dot = pin:CreateTexture(nil, "OVERLAY"); dot:SetAllPoints(); dot:SetTexture("Interface\\Buttons\\WHITE8X8"); pin.dot = dot
+        pin:Hide(); f.mapPins[i] = pin
+    end
+    local legend = detail:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    legend:SetPoint("TOPLEFT", 12, -251); legend:SetText("|cff40d9ffEntrance|r  |cffff4d33Boss|r  |cffffd133Quest|r  |cff59ff73Shortcut|r  |cffff730dRisky pull|r"); f.legend = legend
+    local openMap = button(detail, "Open world map", 120); openMap:SetPoint("TOPRIGHT", -12, -244)
+    openMap:SetScript("OnClick", function() if FDJ.selected then FDJ:OpenDungeonMap(FDJ.selected.dungeon) end end); f.openMap = openMap
     f.markerButtons = {}
-    for i = 1, 8 do
-        local b = button(detail, "", 510); b:SetPoint("TOPLEFT", 12, -258 - ((i - 1) * 28))
+    for i = 1, 7 do
+        local b = button(detail, "", 510); b:SetPoint("TOPLEFT", 12, -274 - ((i - 1) * 28))
         local fontString = b:GetFontString()
         if fontString and fontString.SetJustifyH then fontString:SetJustifyH("LEFT") end
         f.markerButtons[i] = b
     end
+    local previous = button(detail, "Previous", 80); previous:SetPoint("BOTTOMLEFT", 12, 8)
+    previous:SetScript("OnClick", function() FDJ.markerPage = math.max(1, (FDJ.markerPage or 1) - 1); FDJ:RefreshUI() end); f.previous = previous
+    local page = detail:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); page:SetPoint("LEFT", previous, "RIGHT", 12, 0); f.page = page
+    local nextPage = button(detail, "Next", 80); nextPage:SetPoint("BOTTOMRIGHT", -12, 8)
+    nextPage:SetScript("OnClick", function() FDJ.markerPage = (FDJ.markerPage or 1) + 1; FDJ:RefreshUI() end); f.nextPage = nextPage
     local empty = detail:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     empty:SetPoint("TOPLEFT", 24, -86); empty:SetWidth(470); empty:SetJustifyH("LEFT")
     empty:SetText("WELCOME TO YOUR JOURNAL\n\nDiscovery mode hides authored entries until you reveal them. Click an unknown entry to reveal it; right-click a revealed entry to add a personal annotation.\n\nDungeon facts only come from installed, verified data packs. The addon safely observes boss kills and quest turn-ins when matching verified entries exist—it does not inspect combat logs, targets, loot, names, or realms.\n\nNext: open Options to choose discovery filters and progress scope, or keep general expedition notes below while waiting for a verified pack.")
@@ -217,27 +239,46 @@ function FDJ:RefreshUI()
     local query = string.lower(self.frame.search:GetText() or "")
     local entries = {}
     for _, entry in ipairs(self:GetDungeons()) do if matches(entry, query) then table.insert(entries, entry) end end
+    local dungeonPageSize = #self.frame.dungeonButtons
+    local dungeonMaxPage = math.max(1, math.ceil(#entries / dungeonPageSize))
+    self.dungeonPage = math.min(math.max(1, self.dungeonPage or 1), dungeonMaxPage)
+    self.frame.dungeonPageLabel:SetText(string.format("%d / %d", self.dungeonPage, dungeonMaxPage))
+    self.frame.dungeonPrevious:SetEnabled(self.dungeonPage > 1); self.frame.dungeonNext:SetEnabled(self.dungeonPage < dungeonMaxPage)
+    local dungeonFirst = ((self.dungeonPage - 1) * dungeonPageSize) + 1
     for i, b in ipairs(self.frame.dungeonButtons) do
-        local entry = entries[i]
+        local entry = entries[dungeonFirst + i - 1]
         if entry then
             b:SetText(entry.dungeon.name); b.entry = entry; b:Show()
-            b:SetScript("OnClick", function(btn) FDJ.selected = btn.entry; FDJ:RefreshUI() end)
+            b:SetScript("OnClick", function(btn) FDJ.selected = btn.entry; FDJ.markerPage = 1; FDJ:RefreshUI() end)
         else b:Hide() end
     end
-    if self.selected and not self.packs[self.selected.pack.id] then self.selected = nil end
-    if not self.selected and entries[1] then self.selected = entries[1] end
+    local selectionVisible = false
+    if self.selected then
+        for index = dungeonFirst, math.min(#entries, dungeonFirst + dungeonPageSize - 1) do
+            local entry = entries[index]
+            if entry and entry.pack.id == self.selected.pack.id and entry.dungeon.id == self.selected.dungeon.id then selectionVisible = true; break end
+        end
+    end
+    if not selectionVisible then self.selected = nil end
+    if not self.selected and entries[dungeonFirst] then self.selected = entries[dungeonFirst] end
     local selected = self.selected
     self.frame.empty:SetShown(not selected)
     self.frame.notesLabel:SetShown(not selected)
     self.frame.notes:SetShown(not selected)
     self.frame.map:SetShown(selected and true or false)
+    self.frame.legend:SetShown(selected and true or false); self.frame.openMap:SetShown(selected and true or false)
+    self.frame.previous:SetShown(selected and true or false); self.frame.nextPage:SetShown(selected and true or false); self.frame.page:SetShown(selected and true or false)
+    for _, pin in ipairs(self.frame.mapPins) do pin:Hide() end
     if not selected then
-        self.frame.heading:SetText("No verified data packs installed"); self.frame.source:SetText("")
+        local d = self:GetDiagnostics()
+        self.frame.heading:SetText("No verified dungeon data available")
+        self.frame.source:SetText(string.format("%s  •  %d rejected pack(s)  •  /fdj diagnostics", self.nativeDataStatus or "Install a verified pack or enable the client Encounter Journal.", d.errors))
         for _, b in ipairs(self.frame.markerButtons) do b:Hide() end
         return
     end
     self.frame.heading:SetText(selected.dungeon.name)
-    self.frame.source:SetText("Data: " .. selected.pack.name .. " " .. selected.pack.version .. (selected.pack.source and (" — " .. selected.pack.source) or ""))
+    local source = selected.pack.sources and selected.pack.sources[1]
+    self.frame.source:SetText(string.format("%s %s • build %s • %s • checked %s", selected.pack.name, selected.pack.version, selected.pack.build, selected.pack.verification, source and source.checked or "unknown"))
     if selected.dungeon.map and selected.dungeon.map.texture then
         self.frame.map:SetTexture(selected.dungeon.map.texture); self.frame.map:SetVertexColor(1, 1, 1, 1)
     else
@@ -251,8 +292,30 @@ function FDJ:RefreshUI()
         local revealed = progress and progress.revealed
         if enabled then table.insert(shown, { marker = marker, hidden = self.db.settings.discoveryMode and not revealed }) end
     end
+    local pageSize = #self.frame.markerButtons
+    local maxPage = math.max(1, math.ceil(#shown / pageSize))
+    self.markerPage = math.min(math.max(1, self.markerPage or 1), maxPage)
+    self.frame.page:SetText(string.format("%d / %d  •  %d entries", self.markerPage, maxPage, #shown))
+    self.frame.previous:SetEnabled(self.markerPage > 1); self.frame.nextPage:SetEnabled(self.markerPage < maxPage)
+    for pinIndex, row in ipairs(shown) do
+        local marker, pin = row.marker, self.frame.mapPins[pinIndex]
+        if not pin and not row.hidden and marker.x and marker.y then
+            pin = CreateFrame("Button", nil, self.frame.map:GetParent()); pin:SetSize(14, 14)
+            pin:SetFrameLevel(self.frame.map:GetParent():GetFrameLevel() + 5)
+            local dot = pin:CreateTexture(nil, "OVERLAY"); dot:SetAllPoints(); dot:SetTexture("Interface\\Buttons\\WHITE8X8"); pin.dot = dot
+            self.frame.mapPins[pinIndex] = pin
+        end
+        if pin and not row.hidden and marker.x and marker.y then
+            pin.marker = marker
+            pin:ClearAllPoints(); pin:SetPoint("CENTER", self.frame.map, "TOPLEFT", marker.x * 510, -marker.y * 180)
+            local color = TYPE_COLORS[marker.type] or {1, 1, 1}; pin.dot:SetVertexColor(color[1], color[2], color[3], 0.95)
+            pin:SetScript("OnEnter", function(mapPin) GameTooltip:SetOwner(mapPin, "ANCHOR_RIGHT"); GameTooltip:SetText(mapPin.marker.label); GameTooltip:Show() end)
+            pin:SetScript("OnLeave", GameTooltip_Hide); pin:Show()
+        end
+    end
+    local first = ((self.markerPage - 1) * pageSize) + 1
     for i, b in ipairs(self.frame.markerButtons) do
-        local row = shown[i]
+        local row = shown[first + i - 1]
         if row then
             local marker = row.marker
             if row.hidden then
@@ -271,6 +334,9 @@ function FDJ:RefreshUI()
                 if btn.hidden then GameTooltip:SetText("Unrevealed discovery"); GameTooltip:AddLine("Click to reveal this entry.", 1, 1, 1)
                 else
                     GameTooltip:SetText(btn.marker.label); GameTooltip:AddLine(btn.marker.description or "No spoiler-free description supplied.", 1, 1, 1, true)
+                    GameTooltip:AddLine("Verification: " .. (btn.marker.verification or selected.dungeon.verification or selected.pack.verification), 0.65, 0.8, 1)
+                    if btn.marker.encounterID then GameTooltip:AddLine("Encounter ID: " .. btn.marker.encounterID, 0.75, 0.75, 0.75) end
+                    if btn.marker.questID then GameTooltip:AddLine("Quest ID: " .. btn.marker.questID, 0.75, 0.75, 0.75) end
                     local progress = FDJ:GetMarkerProgress(selected.pack.id, selected.dungeon.id, btn.marker.id, false)
                     if progress and progress.revealedAt then GameTooltip:AddLine("First revealed: " .. date("%Y-%m-%d %H:%M", progress.revealedAt), 0.75, 0.75, 0.75) end
                     if progress and progress.firstKill then GameTooltip:AddLine("First kill: " .. date("%Y-%m-%d %H:%M", progress.firstKill), 0.75, 0.75, 0.75) end

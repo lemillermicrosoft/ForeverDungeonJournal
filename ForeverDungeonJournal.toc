@@ -2,7 +2,7 @@
 ## Title: Forever Dungeon Journal
 ## Notes: Spoiler-light dungeon atlas and personal discovery journal.
 ## Author: Forever Dungeon Journal contributors
-## Version: 0.1.0-alpha
+## Version: 0.2.0-alpha.1
 ## X-Curse-Project-ID: 1719918
 ## IconTexture: Interface\AddOns\ForeverDungeonJournal\Media\Icon
 ## SavedVariables: ForeverDungeonJournalDB
@@ -12,6 +12,7 @@
 Core.lua
 Database.lua
 DataRegistry.lua
+NativeData.lua
 UI.lua
 Options.lua
 

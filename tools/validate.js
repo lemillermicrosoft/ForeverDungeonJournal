@@ -20,12 +20,14 @@ if (listed.some(name => /dev|sample/i.test(name))) errors.push('dev fixture in T
 for (const forbidden of [
   'COMBAT_LOG_EVENT_UNFILTERED', 'CombatLogGetCurrentEventInfo', 'ENCOUNTER_LOOT_RECEIVED',
   'PLAYER_TARGET_CHANGED', 'UnitGUID(', 'UnitName(', 'GetRealmName(', 'itemLink',
+  'CastSpell', 'UseAction(', 'RunMacro', 'PickupSpell(', 'TargetUnit(', 'AttackTarget(',
 ]) {
   if (combined.includes(forbidden)) errors.push(`forbidden unsafe observation/API: ${forbidden}`);
 }
 for (const required of [
   'SavedVariables:', 'SavedVariablesPerCharacter:', 'RegisterDataPack', 'discoveryMode',
   'appearance', 'Interface\\\\DialogFrame\\\\UI-DialogBox-Border',
+  'API_VERSION = 2', 'pack.sources', 'pack.build', 'pack.license', 'RegisterNativeData',
   'IconTexture: Interface\\AddOns\\ForeverDungeonJournal\\Media\\Icon',
 ]) {
   if (!(toc + combined).includes(required)) errors.push(`missing: ${required}`);

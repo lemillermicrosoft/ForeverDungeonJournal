@@ -1,7 +1,7 @@
 local ADDON, FDJ = ...
 
 FDJ.name = ADDON
-FDJ.version = "0.1.0-alpha"
+FDJ.version = "0.2.0-alpha.1"
 FDJ.events = CreateFrame("Frame")
 FDJ.callbacks = {}
 
@@ -27,6 +27,7 @@ FDJ.events:SetScript("OnEvent", function(_, event, ...)
         if loaded ~= ADDON then return end
         FDJ:InitializeDatabase()
         FDJ:InitializeRegistry()
+        FDJ:RegisterNativeData()
         -- Register Options before creating the main window so a client-specific
         -- widget failure cannot hide the addon's configuration category.
         local optionsOK, optionsError = pcall(FDJ.InitializeOptions, FDJ)
@@ -58,8 +59,13 @@ SlashCmdList.FOREVERDUNGEONJOURNAL = function(input)
         FDJ.db.window = nil
         if FDJ.frame then FDJ:ResetWindowPosition() end
         message("window position reset.")
+    elseif input == "diagnostics" then
+        local d = FDJ:GetDiagnostics()
+        message(string.format("v%s; %d pack(s), %d dungeon(s), %d marker(s), %d rejected pack(s).", FDJ.version, d.packs, d.dungeons, d.markers, d.errors))
+        message(FDJ.nativeDataStatus or "Native data provider has no status.")
+        for name, loaded in pairs(d.integrations) do message(name .. ": " .. (loaded and "loaded" or "not loaded")) end
     elseif input == "help" then
-        message("/fdj — open; /fdj resetwindow — reset position")
+        message("/fdj — open; /fdj diagnostics — pack/integration status; /fdj resetwindow — reset position")
     else
         FDJ:ToggleUI()
     end

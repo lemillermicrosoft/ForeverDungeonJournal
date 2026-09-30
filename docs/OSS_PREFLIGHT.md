@@ -1,17 +1,32 @@
-# Lightweight OSS preflight (2026-09-30)
+# OSS, data, and license preflight (2026-09-30)
 
-The goal was to avoid duplicating mature addon responsibilities. Repository pages and project documentation were reviewed; no upstream code or data was imported.
+No upstream code, maps, databases, quest text, routes, or loot tables are copied into this addon.
 
-- **Atlas / Atlas Classic variants:** mature atlas/map presentation and authored map modules. Prefer an optional adapter or independently licensed data pack over replacing or copying Atlas assets. Atlas variants and eras differ; confirm the exact upstream repository and license before integration.
-- **AtlasLootClassic:** mature loot-table browser with profile/favorites features. FDJ should deep-link or use a documented API if one exists rather than ship loot tables. The reviewed project describes dungeon/raid loot browsing and links Atlas modules. Confirm license for any code-level adapter.
-- **HandyNotes:** an ecosystem for map-pin providers. Prefer a small optional pin-provider bridge for discovered entrances rather than implementing world-map pin infrastructure. Repository location varies; confirm canonical project/API and license before implementation.
-- **Questie:** mature Classic quest database/helper with documented QuestieDB integration. Prefer optional lookup/link integration; never copy its quest database. Its repository documents Lua 5.1 tooling and integration material. Confirm the current license and API compatibility with WoW Forever.
+| Resource | Verified repository / status | License finding | Decision |
+|---|---|---|---|
+| Atlas / Atlas variants | `laytya/Atlas`; variants differ by era and maintainer | GitHub did not expose a repository license for the reviewed fork | Optional load-order detection only; do not copy assets/data or call undocumented globals. |
+| AtlasLootClassic | `Hoizame/AtlasLootClassic` | GPL-2.0 license detected | Detect installation; leave loot browsing to AtlasLoot. No loot data copied. |
+| Questie / QuestieDB | `Questie/Questie`, `Questie/QuestieDB` | Reviewed repositories did not expose a machine-readable license endpoint for the database | Detect installation; require a documented, compatible API and explicit data terms before an adapter. |
+| HandyNotes | canonical repository resolved as `Nevcairiel/HandyNotes` | Repository did not expose a machine-readable license endpoint | Detect installation; future entrance pins should use its maintained provider API only after exact Forever compatibility/license review. |
+| Forever Atlas website | `benjamh681/wow-forever-atlas` | No repository license detected; site is a web guide, not an addon data API | Link/reference only in provenance research; copy nothing. |
+| Installed WoW Forever client | build observed locally: `1.60.1.70124`, product `wow_classic_beta` | Blizzard client runtime | Read names/IDs/art returned by documented global Encounter Journal APIs at runtime; redistribute no extracted database/assets. |
 
-Decision: build only the journal/discovery layer and an authored-pack contract. Declare all four families as optional dependencies, bundle none of their assets/data/code, and leave adapters off until target-client and license verification. This avoids license assumptions and keeps production facts empty.
+## Architecture decision
 
-Sources reviewed:
-- https://github.com/Hoizame/AtlasLootClassic
+The MVP owns only journal/discovery state and an API v2 authored-pack contract. At runtime it may load Blizzard's Encounter Journal UI module, then query `EJ_GetNumInstances`, `EJ_GetInstanceByIndex`, and `EJ_GetEncounterInfoByIndex`. Results are labeled `client`, include the exact build, and are never serialized as a redistributable source pack.
+
+Atlas, AtlasLoot, Questie, and HandyNotes remain optional dependencies and appear in diagnostics. This is deliberate lawful integration: no fragile undocumented invocation and no license assumption.
+
+## Precise bounded blocker
+
+As of this check, no maintained, license-clear WoW Forever dataset/API was found that supplies verified entrance coordinates, dungeon quest associations, shortcuts, risky-pull routes, or redistributable floor maps for build 1.60.1.70124. Therefore those fields remain absent/unconfirmed unless an API v2 pack documents direct client verification and redistribution rights. Fabricating classic-era carryovers would be especially unsafe because Forever includes new/changed dungeons.
+
+Sources checked:
+
 - https://github.com/laytya/Atlas
+- https://github.com/Hoizame/AtlasLootClassic
 - https://github.com/Questie/Questie
-- HandyNotes project identity could not be reliably resolved during preflight; verify canonical repository before adapter work.
-
+- https://github.com/Questie/QuestieDB
+- https://github.com/Nevcairiel/HandyNotes
+- https://github.com/benjamh681/wow-forever-atlas
+- https://wowforeveratlas.com/sources

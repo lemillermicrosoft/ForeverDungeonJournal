@@ -1,7 +1,7 @@
 local _, FDJ = ...
 
 local ACCOUNT_DEFAULTS = {
-    schema = 2,
+    schema = 3,
     settings = {
         appearance = "blizzard",
         discoveryMode = true,
@@ -11,6 +11,7 @@ local ACCOUNT_DEFAULTS = {
     progress = {},
     annotations = {},
     generalNotes = "",
+    migrations = {},
 }
 
 local CHARACTER_DEFAULTS = { schema = 1, progress = {}, annotations = {} }
@@ -39,15 +40,14 @@ function FDJ:InitializeDatabase()
     -- selection made after this migration remains untouched.
     local oldSchema = tonumber(ForeverDungeonJournalDB.schema) or (existingAccount and 1 or 0)
     if oldSchema < 2 then
-        if ForeverDungeonJournalDB.settings.appearance == nil then
-            ForeverDungeonJournalDB.settings.appearance = "blizzard"
-        end
-        -- Seed onboarding metadata only during this migration. It is not a
-        -- recurring default, so later user changes are never replaced.
-        if ForeverDungeonJournalDB.settings.onboardingVersion == nil then
-            ForeverDungeonJournalDB.settings.onboardingVersion = 1
-        end
+        if ForeverDungeonJournalDB.settings.appearance == nil then ForeverDungeonJournalDB.settings.appearance = "blizzard" end
+        if ForeverDungeonJournalDB.settings.onboardingVersion == nil then ForeverDungeonJournalDB.settings.onboardingVersion = 1 end
         ForeverDungeonJournalDB.schema = 2
+    end
+    if oldSchema < 3 then
+        if type(ForeverDungeonJournalDB.migrations) ~= "table" then ForeverDungeonJournalDB.migrations = {} end
+        ForeverDungeonJournalDB.migrations[3] = true
+        ForeverDungeonJournalDB.schema = 3
     end
 
     -- Repair malformed saved variables before recursively filling nil values.
@@ -59,8 +59,11 @@ function FDJ:InitializeDatabase()
     if type(ForeverDungeonJournalCharDB.annotations) ~= "table" then ForeverDungeonJournalCharDB.annotations = {} end
     copyDefaults(ForeverDungeonJournalDB, ACCOUNT_DEFAULTS)
     copyDefaults(ForeverDungeonJournalCharDB, CHARACTER_DEFAULTS)
-    if ForeverDungeonJournalDB.settings.appearance ~= "blizzard" and ForeverDungeonJournalDB.settings.appearance ~= "bronze" then
-        ForeverDungeonJournalDB.settings.appearance = "blizzard"
+    if ForeverDungeonJournalDB.settings.appearance ~= "blizzard" and ForeverDungeonJournalDB.settings.appearance ~= "bronze" then ForeverDungeonJournalDB.settings.appearance = "blizzard" end
+    if ForeverDungeonJournalDB.settings.progressScope ~= "character" and ForeverDungeonJournalDB.settings.progressScope ~= "account" then ForeverDungeonJournalDB.settings.progressScope = "character" end
+    if type(ForeverDungeonJournalDB.settings.discoveryMode) ~= "boolean" then ForeverDungeonJournalDB.settings.discoveryMode = true end
+    for markerType in pairs(ACCOUNT_DEFAULTS.settings.show) do
+        if type(ForeverDungeonJournalDB.settings.show[markerType]) ~= "boolean" then ForeverDungeonJournalDB.settings.show[markerType] = true end
     end
     self.db = ForeverDungeonJournalDB
     self.charDB = ForeverDungeonJournalCharDB
