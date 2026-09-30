@@ -1,0 +1,15 @@
+## Interface: 16001
+## Title: Forever Dungeon Journal
+## Notes: Spoiler-light dungeon atlas and personal discovery journal.
+## Author: Forever Dungeon Journal contributors
+## Version: 0.1.0-alpha
+## SavedVariables: ForeverDungeonJournalDB
+## SavedVariablesPerCharacter: ForeverDungeonJournalCharDB
+## OptionalDeps: Atlas, AtlasLoot, AtlasLootClassic, HandyNotes, Questie
+
+Core.lua
+Database.lua
+DataRegistry.lua
+UI.lua
+Options.lua
+

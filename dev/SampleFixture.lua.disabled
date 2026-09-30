@@ -1,0 +1,11 @@
+-- DEVELOPMENT ONLY. Fictional content; never ship or enable in production.
+local _, FDJ = ...
+FDJ:RegisterDataPack({
+    id = "dev.fictional", name = "Fictional Development Fixture", version = "0",
+    source = "FICTIONAL TEST DATA — NOT VERIFIED",
+    dungeons = {{ id = "test-dungeon", name = "TEST ONLY: Bronze Cellar", markers = {
+        { id = "test-entrance", type = "entrance", label = "TEST ONLY: Entrance", x = 0.1, y = 0.2 },
+        { id = "test-boss", type = "boss", label = "TEST ONLY: Training Boss", x = 0.5, y = 0.5 },
+    }}},
+})
+
