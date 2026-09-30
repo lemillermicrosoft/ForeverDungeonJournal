@@ -25,10 +25,11 @@ for (const forbidden of [
 }
 for (const required of [
   'SavedVariables:', 'SavedVariablesPerCharacter:', 'RegisterDataPack', 'discoveryMode',
-  'X-Curse-Project-ID: PLACEHOLDER', 'IconTexture: Interface\\AddOns\\ForeverDungeonJournal\\Media\\Icon',
+  'IconTexture: Interface\\AddOns\\ForeverDungeonJournal\\Media\\Icon',
 ]) {
   if (!(toc + combined).includes(required)) errors.push(`missing: ${required}`);
 }
+if (!/^## X-Curse-Project-ID:\s*\d+\s*$/m.test(toc)) errors.push('missing numeric CurseForge project ID');
 if (!fs.existsSync(path.join(root, 'Media', 'Icon.tga'))) errors.push('missing bundled icon');
 if (fs.existsSync(path.join(root, 'dist', 'ForeverDungeonJournal', 'node_modules'))) errors.push('node_modules leaked into staging');
 if (errors.length) {
