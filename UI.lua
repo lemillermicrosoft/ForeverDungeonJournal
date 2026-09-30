@@ -44,7 +44,9 @@ function FDJ:InitializeUI()
     list:SetPoint("TOPLEFT", 14, -78); list:SetPoint("BOTTOMLEFT", 14, 14); list:SetWidth(240); bronzeBackdrop(list)
     f.dungeonButtons = {}
     for i = 1, 18 do
-        local b = button(list, "", 216); b:SetPoint("TOPLEFT", 10, -10 - ((i - 1) * 25)); b:SetJustifyH("LEFT")
+        local b = button(list, "", 216); b:SetPoint("TOPLEFT", 10, -10 - ((i - 1) * 25))
+        local fontString = b:GetFontString()
+        if fontString and fontString.SetJustifyH then fontString:SetJustifyH("LEFT") end
         f.dungeonButtons[i] = b
     end
 
@@ -58,7 +60,9 @@ function FDJ:InitializeUI()
     map:SetPoint("TOPLEFT", 12, -68); map:SetSize(510, 180); map:SetColorTexture(0.025, 0.02, 0.015, 1); f.map = map
     f.markerButtons = {}
     for i = 1, 8 do
-        local b = button(detail, "", 510); b:SetPoint("TOPLEFT", 12, -258 - ((i - 1) * 28)); b:SetJustifyH("LEFT")
+        local b = button(detail, "", 510); b:SetPoint("TOPLEFT", 12, -258 - ((i - 1) * 28))
+        local fontString = b:GetFontString()
+        if fontString and fontString.SetJustifyH then fontString:SetJustifyH("LEFT") end
         f.markerButtons[i] = b
     end
     local empty = detail:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
