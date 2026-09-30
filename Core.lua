@@ -41,9 +41,7 @@ local function registerOptionalEvent(event)
     pcall(FDJ.events.RegisterEvent, FDJ.events, event)
 end
 registerOptionalEvent("BOSS_KILL")
-registerOptionalEvent("ENCOUNTER_LOOT_RECEIVED")
 registerOptionalEvent("QUEST_TURNED_IN")
-registerOptionalEvent("PLAYER_TARGET_CHANGED")
 
 SLASH_FOREVERDUNGEONJOURNAL1 = "/fdj"
 SLASH_FOREVERDUNGEONJOURNAL2 = "/foreverjournal"
@@ -51,6 +49,7 @@ SlashCmdList.FOREVERDUNGEONJOURNAL = function(input)
     input = strtrim(input or "")
     if input == "resetwindow" then
         FDJ.db.window = nil
+        if FDJ.frame then FDJ:ResetWindowPosition() end
         message("window position reset.")
     elseif input == "help" then
         message("/fdj — open; /fdj resetwindow — reset position")

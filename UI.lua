@@ -23,16 +23,18 @@ function FDJ:InitializeUI()
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
-        local point, _, relativePoint, x, y = self:GetPoint()
-        FDJ.db.window = { point, relativePoint, x, y }
+        FDJ:SaveWindowPosition()
     end)
-    if self.db.window then
-        f:ClearAllPoints(); f:SetPoint(self.db.window[1], UIParent, self.db.window[2], self.db.window[3], self.db.window[4])
+    if self.db.window and self.db.window.x and self.db.window.y then
+        f:ClearAllPoints()
+        f:SetPoint("CENTER", UIParent, "CENTER", self.db.window.x * UIParent:GetWidth(), self.db.window.y * UIParent:GetHeight())
     end
 
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 18, -15); title:SetText("Forever Dungeon Journal"); title:SetTextColor(unpack(BRONZE))
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
+    local options = button(f, "Options", 80); options:SetPoint("TOPRIGHT", -38, -13)
+    options:SetScript("OnClick", function() FDJ:OpenOptions() end)
 
     local search = CreateFrame("EditBox", nil, f, "SearchBoxTemplate")
     search:SetSize(230, 26); search:SetPoint("TOPLEFT", 16, -46); search:SetAutoFocus(false)
@@ -64,6 +66,24 @@ function FDJ:InitializeUI()
     self.frame = f
     self:On("DATA_CHANGED", function() FDJ:RefreshUI() end)
     self:On("PROGRESS_CHANGED", function() FDJ:RefreshUI() end)
+end
+
+function FDJ:SaveWindowPosition()
+    if not self.frame then return end
+    local frameX, frameY = self.frame:GetCenter()
+    local parentX, parentY = UIParent:GetCenter()
+    if not frameX or not parentX or UIParent:GetWidth() == 0 or UIParent:GetHeight() == 0 then return end
+    local scaleRatio = self.frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    self.db.window = {
+        x = ((frameX * scaleRatio) - parentX) / UIParent:GetWidth(),
+        y = ((frameY * scaleRatio) - parentY) / UIParent:GetHeight(),
+    }
+end
+
+function FDJ:ResetWindowPosition()
+    if not self.frame then return end
+    self.frame:ClearAllPoints()
+    self.frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 end
 
 function FDJ:ToggleUI()
@@ -137,10 +157,9 @@ function FDJ:RefreshUI()
                 else
                     GameTooltip:SetText(btn.marker.label); GameTooltip:AddLine(btn.marker.description or "No spoiler-free description supplied.", 1, 1, 1, true)
                     local progress = FDJ:GetMarkerProgress(selected.pack.id, selected.dungeon.id, btn.marker.id, false)
-                    if progress and progress.firstSeen then GameTooltip:AddLine("First seen: " .. date("%Y-%m-%d %H:%M", progress.firstSeen), 0.75, 0.75, 0.75) end
+                    if progress and progress.revealedAt then GameTooltip:AddLine("First revealed: " .. date("%Y-%m-%d %H:%M", progress.revealedAt), 0.75, 0.75, 0.75) end
                     if progress and progress.firstKill then GameTooltip:AddLine("First kill: " .. date("%Y-%m-%d %H:%M", progress.firstKill), 0.75, 0.75, 0.75) end
-                    if progress and progress.firstLoot then GameTooltip:AddLine("First loot: " .. date("%Y-%m-%d %H:%M", progress.firstLoot), 0.75, 0.75, 0.75) end
-                    if progress and progress.firstLootItem then GameTooltip:AddLine(progress.firstLootItem, 1, 1, 1) end
+                    if progress and progress.firstCompleted then GameTooltip:AddLine("Quest completed: " .. date("%Y-%m-%d %H:%M", progress.firstCompleted), 0.75, 0.75, 0.75) end
                     GameTooltip:AddLine("Right-click to annotate.", unpack(BRONZE))
                 end
                 GameTooltip:Show()

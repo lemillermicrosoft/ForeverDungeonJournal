@@ -13,14 +13,14 @@ FDJ:RegisterDataPack({
       map = { texture = "Interface/AddOns/PackName/Maps/map-file" },
       markers = {
         { id = "stable-marker-id", type = "boss", label = "Verified name", x = 0.5, y = 0.5,
-          encounterID = 123, npcID = 456, description = "Spoiler-light authored text" },
+          encounterID = 123, description = "Spoiler-light authored text" },
       },
     },
   },
 })
 ```
 
-Supported marker types are `entrance`, `boss`, `quest`, `shortcut`, and `risky`. Coordinates are normalized 0..1 against the authored map texture. Optional observation keys are `encounterID`, `npcID`, and `questID`.
+Supported marker types are `entrance`, `boss`, `quest`, `shortcut`, and `risky`. Coordinates are normalized 0..1 against the authored map texture. Optional observation keys are `encounterID` and `questID`; they are matched only against non-secret numeric event values. The alpha does not inspect target GUIDs or encounter-loot payloads.
 
 Before release, verify every fact against the target WoW Forever client or a source whose terms allow redistribution. Record source URL/revision, verification date, author, client build, and image provenance. Do not derive or copy restricted/proprietary maps, databases, or text. Keep uncertain content out rather than guessing. Use unique pack/dungeon/marker IDs; IDs become SavedVariables keys and must remain stable.
 

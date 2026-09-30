@@ -4,7 +4,7 @@ local VALID_TYPES = { entrance = true, boss = true, quest = true, shortcut = tru
 
 function FDJ:InitializeRegistry()
     self.packs = self.packs or {}
-    self.markerIndex = self.markerIndex or { encounter = {}, quest = {}, npc = {} }
+    self.markerIndex = self.markerIndex or { encounter = {}, quest = {} }
 end
 
 local function assertString(value, label)
@@ -32,7 +32,6 @@ function FDJ:RegisterDataPack(pack)
             local ref = { pack = pack, dungeon = dungeon, marker = marker }
             if marker.encounterID then self.markerIndex.encounter[marker.encounterID] = ref end
             if marker.questID then self.markerIndex.quest[marker.questID] = ref end
-            if marker.npcID then self.markerIndex.npc[marker.npcID] = ref end
         end
     end
     self.packs[pack.id] = pack
@@ -56,33 +55,28 @@ function FDJ:GetDungeons()
     return result
 end
 
-local function record(ref, field, detail)
+local function isSafeNumber(value)
+    if issecretvalue then
+        local ok, secret = pcall(issecretvalue, value)
+        if not ok or secret then return false end
+    end
+    return type(value) == "number"
+end
+
+local function record(ref, field)
     if not ref then return end
     FDJ:Reveal(ref.pack.id, ref.dungeon.id, ref.marker.id, "observed")
     local progress = FDJ:GetMarkerProgress(ref.pack.id, ref.dungeon.id, ref.marker.id, true)
     if not progress[field] then progress[field] = time() end
-    if detail and not progress.firstLootItem then progress.firstLootItem = detail end
 end
 
 function FDJ:Observe(event, ...)
+    local observedID = ...
+    if not isSafeNumber(observedID) then return end
     if event == "BOSS_KILL" then
-        local encounterID = ...
-        record(self.markerIndex.encounter[encounterID], "firstKill")
+        record(self.markerIndex.encounter[observedID], "firstKill")
     elseif event == "QUEST_TURNED_IN" then
-        local questID = ...
-        record(self.markerIndex.quest[questID], "firstCompleted")
-    elseif event == "PLAYER_TARGET_CHANGED" then
-        local guid = UnitGUID("target")
-        if guid then
-            local _, _, _, _, _, npcID = strsplit("-", guid)
-            record(self.markerIndex.npc[tonumber(npcID)], "firstSeen")
-        end
-    elseif event == "ENCOUNTER_LOOT_RECEIVED" then
-        local encounterID, itemID, itemLink, _, playerName = ...
-        local mine = UnitName("player")
-        if playerName == mine or playerName == (mine .. "-" .. GetRealmName()) then
-            record(self.markerIndex.encounter[encounterID], "firstLoot", itemLink or ("item:" .. tostring(itemID)))
-        end
+        record(self.markerIndex.quest[observedID], "firstCompleted")
     end
 end
 

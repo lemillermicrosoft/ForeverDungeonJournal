@@ -52,7 +52,7 @@ end
 
 function FDJ:Reveal(packID, dungeonID, markerID, source)
     local progress = self:GetMarkerProgress(packID, dungeonID, markerID, true)
-    if not progress.firstSeen then progress.firstSeen = time() end
+    if not progress.revealedAt then progress.revealedAt = time() end
     progress.revealed = true
     progress.revealSource = progress.revealSource or source or "manual"
     self:Fire("PROGRESS_CHANGED")

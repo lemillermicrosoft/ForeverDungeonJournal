@@ -32,12 +32,34 @@ function FDJ:InitializeOptions()
         for _, c in ipairs(panel.checks) do c:SetChecked(FDJ.db.settings.show[c.key]) end
     end
     panel:SetScript("OnShow", panel.refresh)
-    if Settings and Settings.RegisterCanvasLayoutCategory then
-        local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
-        Settings.RegisterAddOnCategory(category); self.optionsCategory = category:GetID()
-    elseif InterfaceOptions_AddCategory then
-        InterfaceOptions_AddCategory(panel); self.optionsCategory = panel
+    local registered = false
+    if Settings and type(Settings.RegisterCanvasLayoutCategory) == "function" and type(Settings.RegisterAddOnCategory) == "function" then
+        local ok, category = pcall(Settings.RegisterCanvasLayoutCategory, panel, panel.name)
+        if ok and category then
+            local addOK = pcall(Settings.RegisterAddOnCategory, category)
+            if addOK then
+                local idOK, categoryID = pcall(category.GetID, category)
+                self.optionsCategory = idOK and categoryID or category
+                registered = true
+            end
+        end
+    end
+    if not registered and type(InterfaceOptions_AddCategory) == "function" then
+        local ok = pcall(InterfaceOptions_AddCategory, panel)
+        if ok then self.optionsCategory = panel end
     end
     self.optionsPanel = panel
+end
+
+function FDJ:OpenOptions()
+    if Settings and type(Settings.OpenToCategory) == "function" and type(self.optionsCategory) ~= "table" then
+        if pcall(Settings.OpenToCategory, self.optionsCategory) then return end
+    end
+    if type(InterfaceOptionsFrame_OpenToCategory) == "function" and self.optionsPanel then
+        pcall(InterfaceOptionsFrame_OpenToCategory, self.optionsPanel)
+        pcall(InterfaceOptionsFrame_OpenToCategory, self.optionsPanel)
+    else
+        self:Message("Options are unavailable on this client build.")
+    end
 end
 

@@ -17,12 +17,20 @@ for (const name of listed) {
   catch (error) { errors.push(`${name}: Lua 5.1 parse error: ${error.message}`); }
 }
 if (listed.some(name => /dev|sample/i.test(name))) errors.push('dev fixture in TOC');
-for (const forbidden of ['COMBAT_LOG_EVENT_UNFILTERED', 'CombatLogGetCurrentEventInfo']) {
-  if (combined.includes(forbidden)) errors.push(`forbidden combat-log API: ${forbidden}`);
+for (const forbidden of [
+  'COMBAT_LOG_EVENT_UNFILTERED', 'CombatLogGetCurrentEventInfo', 'ENCOUNTER_LOOT_RECEIVED',
+  'PLAYER_TARGET_CHANGED', 'UnitGUID(', 'UnitName(', 'GetRealmName(', 'itemLink',
+]) {
+  if (combined.includes(forbidden)) errors.push(`forbidden unsafe observation/API: ${forbidden}`);
 }
-for (const required of ['SavedVariables:', 'SavedVariablesPerCharacter:', 'RegisterDataPack', 'discoveryMode']) {
+for (const required of [
+  'SavedVariables:', 'SavedVariablesPerCharacter:', 'RegisterDataPack', 'discoveryMode',
+  'X-Curse-Project-ID: PLACEHOLDER', 'IconTexture: Interface\\AddOns\\ForeverDungeonJournal\\Media\\Icon',
+]) {
   if (!(toc + combined).includes(required)) errors.push(`missing: ${required}`);
 }
+if (!fs.existsSync(path.join(root, 'Media', 'Icon.tga'))) errors.push('missing bundled icon');
+if (fs.existsSync(path.join(root, 'dist', 'ForeverDungeonJournal', 'node_modules'))) errors.push('node_modules leaked into staging');
 if (errors.length) {
   console.error('VALIDATION FAILED\n' + errors.map(e => '- ' + e).join('\n'));
   process.exit(1);
