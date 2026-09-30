@@ -27,10 +27,17 @@ FDJ.events:SetScript("OnEvent", function(_, event, ...)
         if loaded ~= ADDON then return end
         FDJ:InitializeDatabase()
         FDJ:InitializeRegistry()
-        FDJ:InitializeUI()
-        FDJ:InitializeOptions()
-        FDJ:RefreshUI()
-        message("loaded. Type /fdj to open.")
+        -- Register Options before creating the main window so a client-specific
+        -- widget failure cannot hide the addon's configuration category.
+        local optionsOK, optionsError = pcall(FDJ.InitializeOptions, FDJ)
+        if not optionsOK then message("Options registration failed: " .. tostring(optionsError)) end
+        local uiOK, uiError = pcall(FDJ.InitializeUI, FDJ)
+        if uiOK then
+            FDJ:RefreshUI()
+        else
+            message("Window creation failed: " .. tostring(uiError))
+        end
+        message("Loaded. Type /fdj to open or /fdj help for commands. Configuration: Esc > Options > AddOns > Forever Dungeon Journal.")
         return
     end
     FDJ:Observe(event, ...)

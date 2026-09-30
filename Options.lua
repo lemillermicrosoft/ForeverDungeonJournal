@@ -8,7 +8,8 @@ local function check(parent, label, key, x, y)
 end
 
 function FDJ:InitializeOptions()
-    local panel = CreateFrame("Frame")
+    if self.optionsPanel then return end
+    local panel = CreateFrame("Frame", "ForeverDungeonJournalOptions", UIParent)
     panel.name = "Forever Dungeon Journal"
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge"); title:SetPoint("TOPLEFT", 16, -16); title:SetText(panel.name)
     local discovery = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
@@ -46,9 +47,10 @@ function FDJ:InitializeOptions()
     end
     if not registered and type(InterfaceOptions_AddCategory) == "function" then
         local ok = pcall(InterfaceOptions_AddCategory, panel)
-        if ok then self.optionsCategory = panel end
+        if ok then self.optionsCategory = panel; registered = true end
     end
     self.optionsPanel = panel
+    if not registered then self:Message("Could not register the AddOns options category; use /fdj and report this client build.") end
 end
 
 function FDJ:OpenOptions()
