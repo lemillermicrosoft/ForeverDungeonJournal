@@ -3,7 +3,7 @@
 ## Notes: Spoiler-light dungeon atlas and personal discovery journal.
 ## Author: Forever Dungeon Journal contributors
 ## Version: 0.1.0-alpha
-## X-Curse-Project-ID: PLACEHOLDER
+## X-Curse-Project-ID: 1719918
 ## IconTexture: Interface\AddOns\ForeverDungeonJournal\Media\Icon
 ## SavedVariables: ForeverDungeonJournalDB
 ## SavedVariablesPerCharacter: ForeverDungeonJournalCharDB
