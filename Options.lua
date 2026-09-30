@@ -27,25 +27,35 @@ function FDJ:InitializeOptions()
     local discovery = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
     discovery:SetPoint("TOPLEFT", 16, -104); discovery.Text:SetText("Discovery mode (hide unrevealed content)")
     discovery:SetScript("OnClick", function(self) FDJ.db.settings.discoveryMode = self:GetChecked() and true or false; FDJ:RefreshUI() end)
-    local scopeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal"); scopeLabel:SetPoint("TOPLEFT", 16, -144); scopeLabel:SetText("Progress scope")
-    local scope = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate,BackdropTemplate"); scope:SetSize(150, 24); scope:SetPoint("TOPLEFT", 16, -164)
-    scope.nativeTextures = { scope:GetNormalTexture(), scope:GetPushedTexture(), scope:GetHighlightTexture(), scope:GetDisabledTexture() }
-    self.appearanceButtons = self.appearanceButtons or {}; table.insert(self.appearanceButtons, scope)
-    scope:SetScript("OnClick", function(self)
-        FDJ.db.settings.progressScope = FDJ.db.settings.progressScope == "character" and "account" or "character"
-        self:SetText(FDJ.db.settings.progressScope == "character" and "Per character" or "Account-wide"); FDJ:RefreshUI()
+    local scopeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal"); scopeLabel:SetPoint("TOPLEFT", 16, -144); scopeLabel:SetText("Progress storage")
+    local characterScope = CreateFrame("CheckButton", nil, panel, "UIRadioButtonTemplate")
+    characterScope:SetPoint("TOPLEFT", 16, -164); characterScope.Text:SetText("Per character")
+    characterScope:SetScript("OnClick", function()
+        FDJ.db.settings.progressScope = "character"
+        FDJ:RefreshUI()
+        panel.refresh()
     end)
-    local filterLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal"); filterLabel:SetPoint("TOPLEFT", 16, -210); filterLabel:SetText("Visible marker types")
+    local accountScope = CreateFrame("CheckButton", nil, panel, "UIRadioButtonTemplate")
+    accountScope:SetPoint("TOPLEFT", 180, -164); accountScope.Text:SetText("Account-wide")
+    accountScope:SetScript("OnClick", function()
+        FDJ.db.settings.progressScope = "account"
+        FDJ:RefreshUI()
+        panel.refresh()
+    end)
+    local scopeHelp = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    scopeHelp:SetPoint("TOPLEFT", 16, -188); scopeHelp:SetText("Choose one place to store discoveries and notes.")
+    local filterLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal"); filterLabel:SetPoint("TOPLEFT", 16, -220); filterLabel:SetText("Visible marker types")
     panel.checks = {
-        check(panel, "Entrances", "entrance", 16, -232), check(panel, "Bosses", "boss", 16, -260),
-        check(panel, "Quests", "quest", 16, -288), check(panel, "Shortcuts", "shortcut", 180, -232),
-        check(panel, "Risky pulls", "risky", 180, -260),
+        check(panel, "Entrances", "entrance", 16, -242), check(panel, "Bosses", "boss", 16, -270),
+        check(panel, "Quests", "quest", 16, -298), check(panel, "Shortcuts", "shortcut", 180, -242),
+        check(panel, "Risky pulls", "risky", 180, -270),
     }
     panel.refresh = function()
         native:SetChecked(FDJ.db.settings.appearance == "blizzard")
         bronze:SetChecked(FDJ.db.settings.appearance == "bronze")
         discovery:SetChecked(FDJ.db.settings.discoveryMode)
-        scope:SetText(FDJ.db.settings.progressScope == "character" and "Per character" or "Account-wide")
+        characterScope:SetChecked(FDJ.db.settings.progressScope == "character")
+        accountScope:SetChecked(FDJ.db.settings.progressScope == "account")
         for _, c in ipairs(panel.checks) do c:SetChecked(FDJ.db.settings.show[c.key]) end
     end
     panel:SetScript("OnShow", panel.refresh)

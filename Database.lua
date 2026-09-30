@@ -34,12 +34,13 @@ function FDJ:InitializeDatabase()
     if type(ForeverDungeonJournalCharDB) ~= "table" then ForeverDungeonJournalCharDB = {} end
     if type(ForeverDungeonJournalDB.settings) ~= "table" then ForeverDungeonJournalDB.settings = {} end
 
-    -- Schema 1 always used bronze. Preserve it for upgraded users while new
-    -- installs receive the native Blizzard appearance from ACCOUNT_DEFAULTS.
+    -- Appearance was not user-selectable before schema 2, so missing values
+    -- migrate to the product-wide Blizzard/native default. An explicit bronze
+    -- selection made after this migration remains untouched.
     local oldSchema = tonumber(ForeverDungeonJournalDB.schema) or (existingAccount and 1 or 0)
     if oldSchema < 2 then
-        if existingAccount then
-            if ForeverDungeonJournalDB.settings.appearance == nil then ForeverDungeonJournalDB.settings.appearance = "bronze" end
+        if ForeverDungeonJournalDB.settings.appearance == nil then
+            ForeverDungeonJournalDB.settings.appearance = "blizzard"
         end
         -- Seed onboarding metadata only during this migration. It is not a
         -- recurring default, so later user changes are never replaced.
