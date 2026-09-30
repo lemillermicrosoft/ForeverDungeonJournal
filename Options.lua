@@ -1,8 +1,23 @@
 local _, FDJ = ...
 
+local function setControlText(control, text, width)
+    local label = control.Text or (control:GetName() and _G[control:GetName() .. "Text"])
+    if not label then
+        -- Forever omits the standard .Text region on some radio/check
+        -- templates. Create an addon-owned label instead of aborting Options.
+        label = control:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        label:SetPoint("LEFT", control, "RIGHT", 4, 0)
+        label:SetJustifyH("LEFT")
+        control.FDJText = label
+    end
+    label:SetText(text)
+    label:SetWidth(width or 145)
+    return label
+end
+
 local function check(parent, label, key, x, y)
     local c = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
-    c:SetPoint("TOPLEFT", x, y); c.Text:SetText(label)
+    c:SetPoint("TOPLEFT", x, y); setControlText(c, label, 120)
     c:SetScript("OnClick", function(self) FDJ.db.settings.show[key] = self:GetChecked() and true or false; FDJ:RefreshUI() end)
     c.key = key; return c
 end
@@ -19,24 +34,24 @@ function FDJ:InitializeOptions()
     local appearanceLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     appearanceLabel:SetPoint("TOPLEFT", 16, -52); appearanceLabel:SetText("Appearance")
     local native = CreateFrame("CheckButton", nil, panel, "UIRadioButtonTemplate")
-    native:SetPoint("TOPLEFT", 16, -70); native.Text:SetText("Blizzard / native")
+    native:SetPoint("TOPLEFT", 16, -70); setControlText(native, "Blizzard / native", 140)
     native:SetScript("OnClick", function() FDJ:SetAppearance("blizzard") end)
     local bronze = CreateFrame("CheckButton", nil, panel, "UIRadioButtonTemplate")
-    bronze:SetPoint("TOPLEFT", 180, -70); bronze.Text:SetText("Bronze / custom")
+    bronze:SetPoint("TOPLEFT", 210, -70); setControlText(bronze, "Bronze / custom", 140)
     bronze:SetScript("OnClick", function() FDJ:SetAppearance("bronze") end)
     local discovery = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
-    discovery:SetPoint("TOPLEFT", 16, -104); discovery.Text:SetText("Discovery mode (hide unrevealed content)")
+    discovery:SetPoint("TOPLEFT", 16, -104); setControlText(discovery, "Discovery mode (hide unrevealed content)", 300)
     discovery:SetScript("OnClick", function(self) FDJ.db.settings.discoveryMode = self:GetChecked() and true or false; FDJ:RefreshUI() end)
     local scopeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal"); scopeLabel:SetPoint("TOPLEFT", 16, -144); scopeLabel:SetText("Progress storage")
     local characterScope = CreateFrame("CheckButton", nil, panel, "UIRadioButtonTemplate")
-    characterScope:SetPoint("TOPLEFT", 16, -164); characterScope.Text:SetText("Per character")
+    characterScope:SetPoint("TOPLEFT", 16, -164); setControlText(characterScope, "Per character", 130)
     characterScope:SetScript("OnClick", function()
         FDJ.db.settings.progressScope = "character"
         FDJ:RefreshUI()
         panel.refresh()
     end)
     local accountScope = CreateFrame("CheckButton", nil, panel, "UIRadioButtonTemplate")
-    accountScope:SetPoint("TOPLEFT", 180, -164); accountScope.Text:SetText("Account-wide")
+    accountScope:SetPoint("TOPLEFT", 210, -164); setControlText(accountScope, "Account-wide", 130)
     accountScope:SetScript("OnClick", function()
         FDJ.db.settings.progressScope = "account"
         FDJ:RefreshUI()
