@@ -14,28 +14,41 @@ local BRONZE_BACKDROP = {
     tile = true, tileSize = 16, edgeSize = 16,
     insets = { left = 4, right = 4, top = 4, bottom = 4 },
 }
+local NATIVE_INNER_BACKDROP = {
+    bgFile = "Interface\\Buttons\\WHITE8X8",
+    edgeFile = "Interface\\Buttons\\WHITE8X8",
+    edgeSize = 1,
+    insets = { left = 1, right = 1, top = 1, bottom = 1 },
+}
 
 local function applyBackdrop(frame, appearance)
     if appearance == "bronze" then
         frame:SetBackdrop(BRONZE_BACKDROP)
         frame:SetBackdropColor(0.045, 0.035, 0.025, 0.96)
         frame:SetBackdropBorderColor(unpack(BRONZE))
-    else
-        -- BackdropTemplate lays the Blizzard dialog border out as corners and
-        -- edges. This avoids stretching a single atlas across arbitrary sizes.
+    elseif frame._fdjMain then
+        -- Match DPSPulse Forever: one warm native outer frame, rather than a
+        -- stack of bright silver dialog borders around every child panel.
         frame:SetBackdrop(BLIZZARD_BACKDROP)
-        frame:SetBackdropColor(1, 1, 1, 1)
-        frame:SetBackdropBorderColor(1, 1, 1, 1)
+        frame:SetBackdropColor(0.30, 0.20, 0.11, 1)
+        frame:SetBackdropBorderColor(0.72, 0.47, 0.20, 1)
+    else
+        frame:SetBackdrop(NATIVE_INNER_BACKDROP)
+        frame:SetBackdropColor(0.055, 0.032, 0.018, 0.94)
+        frame:SetBackdropBorderColor(0.72, 0.47, 0.16, 0.58)
     end
 end
 
 local function button(parent, text, width)
     local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate,BackdropTemplate")
     b:SetSize(width or 100, 24); b:SetText(text)
-    b.nativeTextures = { b:GetNormalTexture(), b:GetPushedTexture(), b:GetHighlightTexture(), b:GetDisabledTexture() }
     FDJ.appearanceButtons = FDJ.appearanceButtons or {}
     table.insert(FDJ.appearanceButtons, b)
     return b
+end
+
+local function tint(texture, r, g, b, a)
+    if texture and texture.SetVertexColor then texture:SetVertexColor(r, g, b, a or 1) end
 end
 
 function FDJ:SetAppearance(appearance)
@@ -51,17 +64,30 @@ function FDJ:ApplyAppearance()
     local appearance = self.db.settings.appearance == "bronze" and "bronze" or "blizzard"
     for _, frame in ipairs(self.appearanceFrames or {}) do applyBackdrop(frame, appearance) end
     for _, b in ipairs(self.appearanceButtons or {}) do
-        for _, texture in ipairs(b.nativeTextures or {}) do texture:SetAlpha(appearance == "bronze" and 0 or 1) end
+        b:SetNormalTexture("Interface\\Buttons\\WHITE8X8")
+        b:SetPushedTexture("Interface\\Buttons\\WHITE8X8")
+        b:SetDisabledTexture("Interface\\Buttons\\WHITE8X8")
+        b:SetHighlightTexture("Interface\\Buttons\\WHITE8X8", "ADD")
         if appearance == "bronze" then
-            b:SetBackdrop(BRONZE_BACKDROP)
-            b:SetBackdropColor(0.08, 0.055, 0.025, 1)
-            b:SetBackdropBorderColor(unpack(BRONZE))
+            tint(b:GetNormalTexture(), 0.22, 0.12, 0.045); tint(b:GetPushedTexture(), 0.12, 0.06, 0.02)
+            tint(b:GetDisabledTexture(), 0.08, 0.07, 0.06, 0.65); tint(b:GetHighlightTexture(), 0.72, 0.47, 0.16, 0.28)
         else
-            b:SetBackdrop(nil)
+            tint(b:GetNormalTexture(), 0.16, 0.085, 0.025); tint(b:GetPushedTexture(), 0.09, 0.045, 0.015)
+            tint(b:GetDisabledTexture(), 0.07, 0.06, 0.05, 0.65); tint(b:GetHighlightTexture(), 0.88, 0.62, 0.28, 0.32)
         end
+        b:SetBackdrop(NATIVE_INNER_BACKDROP)
+        b:SetBackdropColor(0.055, 0.032, 0.018, 1)
+        b:SetBackdropBorderColor(0.72, 0.47, 0.16, 0.78)
+        local font = b:GetFontString(); if font then font:SetTextColor(1, 0.82, 0.20) end
     end
     for _, title in ipairs(self.appearanceTitles or {}) do
-        if appearance == "bronze" then title:SetTextColor(unpack(BRONZE)) else title:SetTextColor(1, 0.82, 0) end
+        if appearance == "bronze" then title:SetTextColor(unpack(BRONZE)) else title:SetTextColor(1, 0.82, 0.20) end
+    end
+    if self.nativeHeader then
+        self.nativeHeader:SetShown(appearance == "blizzard")
+        self.nativeHeaderHighlight:SetShown(appearance == "blizzard")
+        self.nativeHeaderAccent:SetShown(appearance == "blizzard")
+        self.nativeHeaderShadow:SetShown(appearance == "blizzard")
     end
 end
 
@@ -69,6 +95,7 @@ function FDJ:InitializeUI()
     local f = CreateFrame("Frame", "ForeverDungeonJournalFrame", UIParent, "BackdropTemplate")
     f:SetSize(820, 560); f:SetPoint("CENTER"); f:SetMovable(true); f:SetClampedToScreen(true)
     f:EnableMouse(true); f:RegisterForDrag("LeftButton"); f:SetFrameStrata("HIGH")
+    f._fdjMain = true
     self.appearanceFrames = self.appearanceFrames or {}; table.insert(self.appearanceFrames, f)
     f:Hide(); table.insert(UISpecialFrames, f:GetName())
     f:SetScript("OnDragStart", f.StartMoving)
@@ -81,11 +108,24 @@ function FDJ:InitializeUI()
         f:SetPoint("CENTER", UIParent, "CENTER", self.db.window.x * UIParent:GetWidth(), self.db.window.y * UIParent:GetHeight())
     end
 
+    local header = f:CreateTexture(nil, "ARTWORK")
+    header:SetPoint("TOPLEFT", f, "TOPLEFT", 5, -4); header:SetPoint("TOPRIGHT", f, "TOPRIGHT", -5, -4)
+    header:SetHeight(28); header:SetColorTexture(0.13, 0.055, 0.012, 0.98); self.nativeHeader = header
+    local headerHighlight = f:CreateTexture(nil, "OVERLAY")
+    headerHighlight:SetPoint("TOPLEFT", header, "TOPLEFT", 3, -2); headerHighlight:SetPoint("TOPRIGHT", header, "TOPRIGHT", -3, -2)
+    headerHighlight:SetHeight(1); headerHighlight:SetColorTexture(0.88, 0.62, 0.28, 0.52); self.nativeHeaderHighlight = headerHighlight
+    local headerAccent = f:CreateTexture(nil, "OVERLAY")
+    headerAccent:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 3, 1); headerAccent:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", -3, 1)
+    headerAccent:SetHeight(1); headerAccent:SetColorTexture(0.72, 0.47, 0.16, 0.95); self.nativeHeaderAccent = headerAccent
+    local headerShadow = f:CreateTexture(nil, "ARTWORK")
+    headerShadow:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -1); headerShadow:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, -1)
+    headerShadow:SetHeight(3); headerShadow:SetColorTexture(0, 0, 0, 0.72); self.nativeHeaderShadow = headerShadow
+
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 18, -15); title:SetText("Forever Dungeon Journal")
+    title:SetPoint("TOP", f, "TOP", 0, -11); title:SetText("Forever Dungeon Journal")
     self.appearanceTitles = self.appearanceTitles or {}; table.insert(self.appearanceTitles, title)
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
-    local options = button(f, "Options", 80); options:SetPoint("TOPRIGHT", -38, -13)
+    local options = button(f, "Options", 80); options:SetPoint("TOPRIGHT", -42, -35)
     options:SetScript("OnClick", function() FDJ:OpenOptions() end)
 
     local search = CreateFrame("EditBox", nil, f, "SearchBoxTemplate")
